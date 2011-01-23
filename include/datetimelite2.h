@@ -22,14 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _DATETIMELITE_H_
-#define _DATETIMELITE_H_
+#ifndef _DATETIMELITE2_H_
+#define _DATETIMELITE2_H_
 #include <string>
 #include <cstring>
 #include <cctype>
-#include <stdexcept>
+#include <boost/optional.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
-namespace datetimelite {
+namespace datetimelite2 {
 
 static bool
 is_leap_year(unsigned short year)
@@ -57,7 +58,7 @@ check_date(unsigned short year, unsigned short month, unsigned short mday)
     && (mday <= days_in_month(year, month)));
 }
 
-static struct std::tm
+static boost::optional<boost::posix_time::ptime>
 time_from_string(const std::string& s)
 {
   struct std::tm ts;
@@ -75,56 +76,56 @@ time_from_string(const std::string& s)
     if (*c == ',')
       ++c;
     if (*c != ' ')
-      throw std::invalid_argument("format not supported: weekday sepratator");
+      return boost::none;
     ++c;
   }
 
   if (!isdigit(*c))
-    throw std::invalid_argument("format not supported: should be digit");
+    return boost::none;
   ++c;
   if (!isdigit(*c))
-    throw std::invalid_argument("format not supported: should be digit");
+    return boost::none;
   ++c;
   if (*c == '\0')
-    throw std::invalid_argument("format not supported: too short");
+    return boost::none;
   if (isdigit(*c)) {
     ++c;
     if (!isdigit(*c))
-      throw std::invalid_argument("format not supported: should be digit");
+      return boost::none;
     ++c;
     std::memcpy(buf, c-4, 4);
     buf[4] = '\0';
     v = std::atoi(buf);
     if (v < 1900)
-      throw std::invalid_argument("format not supported: wrong year");
+      return boost::none;
     ts.tm_year = v - 1900;
     if (*c == ' ' || *c == '-' || *c == '/')
       ++c;
     if (!isdigit(*c))
-      throw std::invalid_argument("format not supported: month should be digit");
+      return boost::none;
     ++c;
     if (!isdigit(*c))
-      throw std::invalid_argument("format not supported: month should be digit");
+      return boost::none;
     ++c;
     std::memcpy(buf, c-2, 2);
     buf[2] = '\0';
     v = std::atoi(buf);
     if (v == 0 || v > 12)
-      throw std::invalid_argument("format not supported: wrong month");
+      return boost::none;
     ts.tm_mon = v - 1;
     if (*c == ' ' || *c == '-' || *c == '/')
       ++c;
     if (!isdigit(*c))
-      throw std::invalid_argument("format not supported: mday should be digit");
+      return boost::none;
     ++c;
     if (!isdigit(*c))
-      throw std::invalid_argument("format not supported: mday should be digit");
+      return boost::none;
     ++c;
     std::memcpy(buf, c-2, 2);
     buf[2] = '\0';
     v = std::atoi(buf);
     if (v == 0 || v > 31)
-      throw std::invalid_argument("format not supported: wrong mday");
+      return boost::none;
     ts.tm_mday = v;
   } else {
     // common logfile format, HTTP format, RFC850 format 
@@ -132,13 +133,13 @@ time_from_string(const std::string& s)
     buf[2] = '\0';
     v = std::atoi(buf);
     if (v == 0 || v > 31)
-      throw std::invalid_argument("format not supported: wrong mday");
+      return boost::none;
     ts.tm_mday = v;
     if (!(*c == ' ' || *c == '-' || *c == '/'))
-      throw std::invalid_argument("format not supported: seperator not found");
+      return boost::none;
     ++c;
     if (*c == '\0') {
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     } else if (std::strncmp(c, "Jan", 3) == 0) {
       ts.tm_mon = 0;
     } else if (std::strncmp(c, "Feb", 3) == 0) {
@@ -164,28 +165,28 @@ time_from_string(const std::string& s)
     } else if (std::strncmp(c, "Dec", 3) == 0) {
       ts.tm_mon = 11;
     } else {
-      throw std::invalid_argument("format not supported: wrong month");
+      return boost::none;
     }
     c += 3;
     if (!(*c == ' ' || *c == '-' || *c == '/'))
-      throw std::invalid_argument("format not supported: seperator not found");
+      return boost::none;
     ++c;
     if (!isdigit(*c))
-      throw std::invalid_argument("format not supported: year should be digit");
+      return boost::none;
     ++c;
     if (!isdigit(*c))
-      throw std::invalid_argument("format not supported: year should be digit");
+      return boost::none;
     ++c;
     if (isdigit(*c)) {
       ++c;
       if (!isdigit(*c))
-        throw std::invalid_argument("format not supported: yeare should be digit");
+        return boost::none;
       ++c;
       std::memcpy(buf, c-4, 4);
       buf[4] = '\0';
       v = std::atoi(buf);
       if (v < 1900)
-        throw std::invalid_argument("format not supported: wrong year");
+        return boost::none;
       ts.tm_year = v - 1900;
     } else {
       std::memcpy(buf, c-2, 2);
@@ -196,25 +197,25 @@ time_from_string(const std::string& s)
   }
 
   if (!check_date(ts.tm_year, ts.tm_mon+1, ts.tm_mday))
-    throw std::invalid_argument("format not supported: invalid datetime");
+    return boost::none;
 
   if (*c == ' ' || *c == 'T' || *c == ':')
     ++c;
 
   if (*c == '\0')
-    return ts;
+    return boost::posix_time::ptime_from_tm(ts);
 
   if (!(*c >= '0' && *c <= '2'))
-    throw std::invalid_argument("format not supported: wrong hour");
+    return boost::none;
   ++c;
   if (!(*c >= '0' && *c <= '9'))
-    throw std::invalid_argument("format not supported: wrong hour");
+    return boost::none;
   ++c;
   std::memcpy(buf, c - 2, 2);
   buf[2] = '\0';
   v = std::atoi(buf);
   if (v > 24)
-    throw std::invalid_argument("format not supported: hour is too big");
+    return boost::none;
   ts.tm_hour = v;
   if (*c == ':')
     ++c;
@@ -222,13 +223,13 @@ time_from_string(const std::string& s)
   if (*c >= '0' && *c <= '5') {
     ++c;
     if (!(*c >= '0' && *c <= '9'))
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ++c;
     std::memcpy(buf, c - 2, 2);
     buf[2] = '\0';
     v = std::atoi(buf);
     if (v > 59)
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ts.tm_min = v;
     if (*c == ':')
       ++c;
@@ -239,13 +240,13 @@ time_from_string(const std::string& s)
   if (*c >= '0' && *c <= '6') {
     ++c;
     if (!(*c >= '0' && *c <= '9'))
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ++c;
     std::memcpy(buf, c - 2, 2);
     buf[2] = '\0';
     v = std::atoi(buf);
     if (v > 61)
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ts.tm_sec = v;
   } else {
     ts.tm_sec = 0;
@@ -266,16 +267,16 @@ time_from_string(const std::string& s)
 
     // get hour part of timezone bias
     if (!(*c >= '0' && *c <= '2'))
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ++c;
     if (!(*c >= '0' && *c <= '9'))
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ++c;
     std::memcpy(buf, c-2, 2);
     buf[2] = '\0';
     v = std::atoi(buf);
     if (v > 24)
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     if (positive)
         ts.tm_sec += v * 3600;
     else
@@ -284,16 +285,16 @@ time_from_string(const std::string& s)
       ++c;
     // get minutes part of timezone bias
     if (!(*c >= '0' && *c <= '5'))
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ++c;
     if (!(*c >= '0' && *c <= '9'))
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     ++c;
     std::memcpy(buf, c-2, 2);
     buf[2] = '\0';
     v = std::atoi(buf);
     if (v > 59)
-      throw std::invalid_argument("format not supported");
+      return boost::none;
     if (positive)
       ts.tm_sec += v * 60;
     else
@@ -359,7 +360,7 @@ time_from_string(const std::string& s)
   } else if (std::strcmp(c, "Y") == 0) {
     ts.tm_sec += 12 * 3600;
   }
-  return ts;
+  return boost::posix_time::ptime_from_tm(ts);
 }
 
 }  // end of namespace
