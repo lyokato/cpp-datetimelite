@@ -232,7 +232,7 @@ static struct std::tm time_from_string(const std::string& s)
     ts.tm_min = 0;
   }
   // found second part
-  if (*c >= '0' && *c <= '5') {
+  if (*c >= '0' && *c <= '6') {
     ++c;
     if (!(*c >= '0' && *c <= '9'))
       throw std::invalid_argument("format not supported");
@@ -240,7 +240,7 @@ static struct std::tm time_from_string(const std::string& s)
     std::memcpy(buf, c - 2, 2);
     buf[2] = '\0';
     v = std::atoi(buf);
-    if (v > 59)
+    if (v > 61)
       throw std::invalid_argument("format not supported");
     ts.tm_sec = v;
   } else {
@@ -257,7 +257,7 @@ static struct std::tm time_from_string(const std::string& s)
 
   // found timezone
   if (*c =='+' || *c == '-') {
-    bool positive = (*c == '+') ? true : false;
+    bool positive = (*c == '+') ? false : true;
     ++c;
 
     // get hour part of timezone bias
