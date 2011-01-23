@@ -30,6 +30,9 @@ struct std::tm ts = time_from_string("08-Feb-1994"); // broken rfc850 no weekday
 struct std::tm ts = time_from_string("09 Feb 1994"); // proposed new http format no weekday no time
 struct std::tm ts = time_from_string("03/Feb/1994"); // common log file format no weekday, no time
 
+
+boost::posix_time::ptime t = boost::posix_time::ptime_from_tm( datetimelite::time_from_string() );
+
 =======================================================================
  TODO
 =======================================================================
@@ -38,8 +41,6 @@ ctime(3) format support
 ANSI asctime format support
 Unix 'ls -l' format support
 Windows 'dir' format support
-
-Better timezone handling
 
 =======================================================================
  INSTALL
