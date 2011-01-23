@@ -9,7 +9,7 @@ This library allows you to parse datetime formatted string, easily.
  Two version is here
 ----------------------------------------------------------------------
 
-// 1. datelite.h
+// 1. datetimelite.h
 //
 // you can parse many kinds of datetime-formatted-string with
 // 'time_from_string' function which returns struct tm.
