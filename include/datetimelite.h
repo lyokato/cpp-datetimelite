@@ -26,7 +26,6 @@ THE SOFTWARE.
 #define _DATETIMELITE_H_
 #include <string>
 #include <cstring>
-#include <cctype>
 #include <stdexcept>
 
 #define HANDLE_EXCEPTION(msg) \
@@ -42,8 +41,17 @@ THE SOFTWARE.
     HANDLE_EXCEPTION("format not supported: wrong range"); \
   ++c
 
+#define IS_DIGIT(c) \
+    ((c) >= '0' && (c) <= '9')
+
+#define IS_ALNUM(c) \
+    (((c) >= '0' && (c) <= '9') || ((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
+
+#define IS_ALPHA(c) \
+    (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
+
 #define STEP_DIGIT(c) \
-  if (!isdigit(*c)) \
+  if (!IS_DIGIT(*c)) \
     HANDLE_EXCEPTION("format not supported: should be digit"); \
   ++c
 
@@ -99,8 +107,8 @@ time_from_string(const std::string& s)
   int v;
 
   // if found weekday, skip it.
-  if (isalpha(*c)) {
-    while (isalpha(*c)) {
+  if (IS_ALPHA(*c)) {
+    while (IS_ALPHA(*c)) {
       ++c;
     }
     if (*c == ',')
@@ -114,7 +122,7 @@ time_from_string(const std::string& s)
   STEP_DIGIT(c);
   if (*c == '\0')
     HANDLE_EXCEPTION("format not supported: too short");
-  if (isdigit(*c)) {
+  if (IS_DIGIT(*c)) {
     ++c;
     STEP_DIGIT(c);
     SET_V(4);
@@ -175,7 +183,7 @@ time_from_string(const std::string& s)
     STEP_DELIMITER(c);
     STEP_DIGIT(c);
     STEP_DIGIT(c);
-    if (isdigit(*c)) {
+    if (IS_DIGIT(*c)) {
       ++c;
       STEP_DIGIT(c);
       SET_V(4);
@@ -232,7 +240,7 @@ time_from_string(const std::string& s)
   // found floating point part, skip it
   if (*c == ',' || *c == '.') {
     ++c;
-    while (isdigit(*c))
+    while (IS_DIGIT(*c))
       ++c;
   }
   while (*c == ' ')
